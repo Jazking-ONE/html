@@ -72,6 +72,7 @@
   border-radius: 8px;
   position: relative;
   z-index: 1;
+  cursor: crosshair;
 }
 
 .bee-info {
@@ -143,7 +144,7 @@
 <header class="hero">
   <div class="hero-content">
     <h1>🐝 小蜜蜂游戏</h1>
-    <p>消灭敌人，保护家园！</p>
+    <p>360度无死角射击！</p>
   </div>
 </header>
 
@@ -160,8 +161,8 @@
   </div>
   
   <div class="bee-info">
-    <p>使用 ← → 方向键或 A D 键移动飞船</p>
-    <p>按空格键发射子弹</p>
+    <p>使用 ← → ↑ ↓ 方向键或 WASD 移动飞船</p>
+    <p>鼠标瞄准目标，点击或按空格键发射子弹</p>
   </div>
 </div>
 
@@ -179,22 +180,23 @@ const beeCtx = beeCanvas.getContext('2d');
 
 const PLAYER_WIDTH = 50;
 const PLAYER_HEIGHT = 40;
-const BULLET_WIDTH = 4;
-const BULLET_HEIGHT = 15;
+const BULLET_WIDTH = 6;
+const BULLET_HEIGHT = 6;
 const ENEMY_WIDTH = 40;
 const ENEMY_HEIGHT = 30;
 
-let player = { x: 225, y: 350, speed: 8 };
+let player = { x: 250, y: 350, speed: 6 };
 let bullets = [];
 let enemies = [];
 let score = 0;
 let lives = 3;
 let gameLoop = null;
 let isPaused = false;
-let keys = { left: false, right: false, space: false };
+let keys = { left: false, right: false, up: false, down: false, space: false };
+let mousePos = { x: 250, y: 200 };
 
 function initBeeGame() {
-  player = { x: 225, y: 350, speed: 8 };
+  player = { x: 250, y: 350, speed: 6 };
   bullets = [];
   enemies = [];
   score = 0;
@@ -215,30 +217,63 @@ function initBeeGame() {
 }
 
 function drawPlayer() {
+  beeCtx.save();
+  
+  const dx = mousePos.x - (player.x + PLAYER_WIDTH/2);
+  const dy = mousePos.y - (player.y + PLAYER_HEIGHT/2);
+  const angle = Math.atan2(dy, dx);
+  
+  beeCtx.translate(player.x + PLAYER_WIDTH/2, player.y + PLAYER_HEIGHT/2);
+  beeCtx.rotate(angle);
+  
   beeCtx.fillStyle = '#2563eb';
   beeCtx.beginPath();
-  beeCtx.moveTo(player.x + PLAYER_WIDTH/2, player.y);
-  beeCtx.lineTo(player.x, player.y + PLAYER_HEIGHT);
-  beeCtx.lineTo(player.x + PLAYER_WIDTH, player.y + PLAYER_HEIGHT);
+  beeCtx.moveTo(0, -PLAYER_HEIGHT/2);
+  beeCtx.lineTo(-PLAYER_WIDTH/2, PLAYER_HEIGHT/2);
+  beeCtx.lineTo(PLAYER_WIDTH/2, PLAYER_HEIGHT/2);
   beeCtx.closePath();
   beeCtx.fill();
   
   beeCtx.fillStyle = '#1d4ed8';
   beeCtx.beginPath();
-  beeCtx.moveTo(player.x + PLAYER_WIDTH/2 - 10, player.y + PLAYER_HEIGHT);
-  beeCtx.lineTo(player.x + PLAYER_WIDTH/2, player.y + PLAYER_HEIGHT + 15);
-  beeCtx.lineTo(player.x + PLAYER_WIDTH/2 + 10, player.y + PLAYER_HEIGHT);
+  beeCtx.moveTo(-8, PLAYER_HEIGHT/2);
+  beeCtx.lineTo(0, PLAYER_HEIGHT/2 + 12);
+  beeCtx.lineTo(8, PLAYER_HEIGHT/2);
   beeCtx.closePath();
   beeCtx.fill();
+  
+  beeCtx.fillStyle = '#60a5fa';
+  beeCtx.beginPath();
+  beeCtx.moveTo(-10, PLAYER_HEIGHT/2 - 5);
+  beeCtx.lineTo(-15, PLAYER_HEIGHT/2 + 8);
+  beeCtx.lineTo(-5, PLAYER_HEIGHT/2);
+  beeCtx.closePath();
+  beeCtx.fill();
+  
+  beeCtx.beginPath();
+  beeCtx.moveTo(10, PLAYER_HEIGHT/2 - 5);
+  beeCtx.lineTo(15, PLAYER_HEIGHT/2 + 8);
+  beeCtx.lineTo(5, PLAYER_HEIGHT/2);
+  beeCtx.closePath();
+  beeCtx.fill();
+  
+  beeCtx.restore();
 }
 
 function drawBullets() {
-  beeCtx.fillStyle = '#fbbf24';
   bullets.forEach(bullet => {
-    beeCtx.fillRect(bullet.x, bullet.y, BULLET_WIDTH, BULLET_HEIGHT);
-    beeCtx.fillStyle = '#f59e0b';
-    beeCtx.fillRect(bullet.x - 1, bullet.y + BULLET_HEIGHT/2, BULLET_WIDTH + 2, 3);
+    beeCtx.save();
+    beeCtx.translate(bullet.x, bullet.y);
     beeCtx.fillStyle = '#fbbf24';
+    beeCtx.beginPath();
+    beeCtx.arc(0, 0, BULLET_WIDTH/2, 0, Math.PI * 2);
+    beeCtx.fill();
+    
+    beeCtx.fillStyle = '#f59e0b';
+    beeCtx.beginPath();
+    beeCtx.arc(0, 0, BULLET_WIDTH/4, 0, Math.PI * 2);
+    beeCtx.fill();
+    beeCtx.restore();
   });
 }
 
@@ -265,6 +300,26 @@ function drawEnemies() {
   });
 }
 
+function drawCrosshair() {
+  beeCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+  beeCtx.lineWidth = 2;
+  
+  beeCtx.beginPath();
+  beeCtx.moveTo(mousePos.x - 15, mousePos.y);
+  beeCtx.lineTo(mousePos.x - 5, mousePos.y);
+  beeCtx.moveTo(mousePos.x + 5, mousePos.y);
+  beeCtx.lineTo(mousePos.x + 15, mousePos.y);
+  beeCtx.moveTo(mousePos.x, mousePos.y - 15);
+  beeCtx.lineTo(mousePos.x, mousePos.y - 5);
+  beeCtx.moveTo(mousePos.x, mousePos.y + 5);
+  beeCtx.lineTo(mousePos.x, mousePos.y + 15);
+  beeCtx.stroke();
+  
+  beeCtx.beginPath();
+  beeCtx.arc(mousePos.x, mousePos.y, 20, 0, Math.PI * 2);
+  beeCtx.stroke();
+}
+
 function updatePlayer() {
   if (keys.left && player.x > 0) {
     player.x -= player.speed;
@@ -272,20 +327,41 @@ function updatePlayer() {
   if (keys.right && player.x < beeCanvas.width - PLAYER_WIDTH) {
     player.x += player.speed;
   }
+  if (keys.up && player.y > 0) {
+    player.y -= player.speed;
+  }
+  if (keys.down && player.y < beeCanvas.height - PLAYER_HEIGHT) {
+    player.y += player.speed;
+  }
 }
 
 function updateBullets() {
-  bullets = bullets.filter(bullet => bullet.y > -BULLET_HEIGHT);
-  bullets.forEach(bullet => {
-    bullet.y -= 10;
+  bullets = bullets.filter(bullet => {
+    bullet.x += bullet.vx;
+    bullet.y += bullet.vy;
+    return bullet.x > 0 && bullet.x < beeCanvas.width &&
+           bullet.y > 0 && bullet.y < beeCanvas.height;
   });
   
   if (keys.space) {
-    bullets.push({
-      x: player.x + PLAYER_WIDTH/2 - BULLET_WIDTH/2,
-      y: player.y - BULLET_HEIGHT
-    });
+    shootBullet();
     keys.space = false;
+  }
+}
+
+function shootBullet() {
+  const dx = mousePos.x - (player.x + PLAYER_WIDTH/2);
+  const dy = mousePos.y - (player.y + PLAYER_HEIGHT/2);
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  if (distance > 0) {
+    const speed = 12;
+    bullets.push({
+      x: player.x + PLAYER_WIDTH/2,
+      y: player.y + PLAYER_HEIGHT/2,
+      vx: (dx / distance) * speed,
+      vy: (dy / distance) * speed
+    });
   }
 }
 
@@ -309,12 +385,13 @@ function updateEnemies() {
 function checkCollisions() {
   enemies.forEach((enemy, enemyIndex) => {
     bullets.forEach((bullet, bulletIndex) => {
-      if (
-        bullet.x < enemy.x + ENEMY_WIDTH &&
-        bullet.x + BULLET_WIDTH > enemy.x &&
-        bullet.y < enemy.y + ENEMY_HEIGHT &&
-        bullet.y + BULLET_HEIGHT > enemy.y
-      ) {
+      const closestX = Math.max(enemy.x, Math.min(bullet.x, enemy.x + ENEMY_WIDTH));
+      const closestY = Math.max(enemy.y, Math.min(bullet.y, enemy.y + ENEMY_HEIGHT));
+      const distanceX = bullet.x - closestX;
+      const distanceY = bullet.y - closestY;
+      const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+      
+      if (distance < BULLET_WIDTH/2 + 10) {
         bullets.splice(bulletIndex, 1);
         enemies.splice(enemyIndex, 1);
         score += 100;
@@ -383,6 +460,7 @@ function beeUpdate() {
   drawBullets();
   drawEnemies();
   drawPlayer();
+  drawCrosshair();
 }
 
 function startBeeGame() {
@@ -400,6 +478,18 @@ function restartBeeGame() {
   startBeeGame();
 }
 
+beeCanvas.addEventListener('mousemove', (e) => {
+  const rect = beeCanvas.getBoundingClientRect();
+  mousePos.x = e.clientX - rect.left;
+  mousePos.y = e.clientY - rect.top;
+});
+
+beeCanvas.addEventListener('click', () => {
+  if (!isPaused && gameLoop) {
+    shootBullet();
+  }
+});
+
 document.addEventListener('keydown', (e) => {
   switch(e.key) {
     case 'ArrowLeft':
@@ -411,6 +501,16 @@ document.addEventListener('keydown', (e) => {
     case 'd':
     case 'D':
       keys.right = true;
+      break;
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      keys.up = true;
+      break;
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      keys.down = true;
       break;
     case ' ':
       e.preventDefault();
@@ -431,12 +531,23 @@ document.addEventListener('keyup', (e) => {
     case 'D':
       keys.right = false;
       break;
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      keys.up = false;
+      break;
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      keys.down = false;
+      break;
   }
 });
 
 initBeeGame();
 drawBackground();
 drawPlayer();
+drawCrosshair();
 </script>
 </body>
 </html>
