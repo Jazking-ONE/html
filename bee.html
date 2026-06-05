@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小蜜蜂游戏</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.bee-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+.bee-header {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.bee-score-box {
+  background: #1e3a5f;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.bee-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #f59e0b;
+  color: white;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+
+.bee-btn:hover {
+  background: #d97706;
+}
+
+.bee-game {
+  background: linear-gradient(180deg, #87ceeb 0%, #98d8c8 100%);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.bee-game::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 2px, transparent 2px),
+    radial-gradient(circle at 80% 40%, rgba(255,255,255,0.2) 2px, transparent 2px),
+    radial-gradient(circle at 50% 70%, rgba(255,255,255,0.25) 2px, transparent 2px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+#beeCanvas {
+  border-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.bee-info {
+  margin-top: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.bee-game-over {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.bee-game-over.show {
+  display: flex;
+}
+
+.bee-game-over-content {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.bee-game-over-content h2 {
+  color: #f59e0b;
+  margin-bottom: 15px;
+}
+
+.bee-game-over-content p {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.bee-lives {
+  display: flex;
+  gap: 10px;
+}
+
+.live {
+  font-size: 24px;
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="logo">化工实训装置</div>
+    <ul class="nav-links">
+      <li><a href="index.html">产品说明书</a></li>
+      <li><a href="minesweeper.html">扫雷游戏</a></li>
+      <li><a href="snake.html">贪吃蛇游戏</a></li>
+      <li><a href="bee.html" class="active">小蜜蜂游戏</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>🐝 小蜜蜂游戏</h1>
+    <p>消灭敌人，保护家园！</p>
+  </div>
+</header>
+
+<div class="bee-container">
+  <div class="bee-header">
+    <div class="bee-score-box">🏆 得分: <span id="beeScore">0</span></div>
+    <div class="bee-lives" id="beeLives">❤️ ❤️ ❤️</div>
+    <button class="bee-btn" onclick="startBeeGame()">开始游戏</button>
+    <button class="bee-btn" onclick="pauseBeeGame()">暂停/继续</button>
+  </div>
+  
+  <div class="bee-game">
+    <canvas id="beeCanvas" width="500" height="400"></canvas>
+  </div>
+  
+  <div class="bee-info">
+    <p>使用 ← → 方向键或 A D 键移动飞船</p>
+    <p>按空格键发射子弹</p>
+  </div>
+</div>
+
+<div class="bee-game-over" id="beeGameOver">
+  <div class="bee-game-over-content">
+    <h2>🐝 游戏结束!</h2>
+    <p>最终得分: <span id="beeFinalScore">0</span></p>
+    <button class="bee-btn" onclick="restartBeeGame()">重新开始</button>
+  </div>
+</div>
+
+<script>
+const beeCanvas = document.getElementById('beeCanvas');
+const beeCtx = beeCanvas.getContext('2d');
+
+const PLAYER_WIDTH = 50;
+const PLAYER_HEIGHT = 40;
+const BULLET_WIDTH = 4;
+const BULLET_HEIGHT = 15;
+const ENEMY_WIDTH = 40;
+const ENEMY_HEIGHT = 30;
+
+let player = { x: 225, y: 350, speed: 8 };
+let bullets = [];
+let enemies = [];
+let score = 0;
+let lives = 3;
+let gameLoop = null;
+let isPaused = false;
+let keys = { left: false, right: false, space: false };
+
+function initBeeGame() {
+  player = { x: 225, y: 350, speed: 8 };
+  bullets = [];
+  enemies = [];
+  score = 0;
+  lives = 3;
+  isPaused = false;
+  document.getElementById('beeScore').textContent = score;
+  document.getElementById('beeLives').textContent = '❤️ '.repeat(lives);
+  document.getElementById('beeGameOver').classList.remove('show');
+  
+  for (let i = 0; i < 5; i++) {
+    enemies.push({
+      x: i * 100 + 25,
+      y: -ENEMY_HEIGHT - i * 80,
+      speed: 2 + Math.random() * 2,
+      direction: 1
+    });
+  }
+}
+
+function drawPlayer() {
+  beeCtx.fillStyle = '#2563eb';
+  beeCtx.beginPath();
+  beeCtx.moveTo(player.x + PLAYER_WIDTH/2, player.y);
+  beeCtx.lineTo(player.x, player.y + PLAYER_HEIGHT);
+  beeCtx.lineTo(player.x + PLAYER_WIDTH, player.y + PLAYER_HEIGHT);
+  beeCtx.closePath();
+  beeCtx.fill();
+  
+  beeCtx.fillStyle = '#1d4ed8';
+  beeCtx.beginPath();
+  beeCtx.moveTo(player.x + PLAYER_WIDTH/2 - 10, player.y + PLAYER_HEIGHT);
+  beeCtx.lineTo(player.x + PLAYER_WIDTH/2, player.y + PLAYER_HEIGHT + 15);
+  beeCtx.lineTo(player.x + PLAYER_WIDTH/2 + 10, player.y + PLAYER_HEIGHT);
+  beeCtx.closePath();
+  beeCtx.fill();
+}
+
+function drawBullets() {
+  beeCtx.fillStyle = '#fbbf24';
+  bullets.forEach(bullet => {
+    beeCtx.fillRect(bullet.x, bullet.y, BULLET_WIDTH, BULLET_HEIGHT);
+    beeCtx.fillStyle = '#f59e0b';
+    beeCtx.fillRect(bullet.x - 1, bullet.y + BULLET_HEIGHT/2, BULLET_WIDTH + 2, 3);
+    beeCtx.fillStyle = '#fbbf24';
+  });
+}
+
+function drawEnemies() {
+  enemies.forEach(enemy => {
+    beeCtx.fillStyle = '#ef4444';
+    beeCtx.beginPath();
+    beeCtx.moveTo(enemy.x + ENEMY_WIDTH/2, enemy.y + ENEMY_HEIGHT);
+    beeCtx.lineTo(enemy.x, enemy.y);
+    beeCtx.lineTo(enemy.x + ENEMY_WIDTH, enemy.y);
+    beeCtx.closePath();
+    beeCtx.fill();
+    
+    beeCtx.fillStyle = '#dc2626';
+    beeCtx.beginPath();
+    beeCtx.arc(enemy.x + ENEMY_WIDTH/2, enemy.y + 10, 8, 0, Math.PI * 2);
+    beeCtx.fill();
+    
+    beeCtx.fillStyle = '#fff';
+    beeCtx.beginPath();
+    beeCtx.arc(enemy.x + ENEMY_WIDTH/2 - 3, enemy.y + 8, 2, 0, Math.PI * 2);
+    beeCtx.arc(enemy.x + ENEMY_WIDTH/2 + 3, enemy.y + 8, 2, 0, Math.PI * 2);
+    beeCtx.fill();
+  });
+}
+
+function updatePlayer() {
+  if (keys.left && player.x > 0) {
+    player.x -= player.speed;
+  }
+  if (keys.right && player.x < beeCanvas.width - PLAYER_WIDTH) {
+    player.x += player.speed;
+  }
+}
+
+function updateBullets() {
+  bullets = bullets.filter(bullet => bullet.y > -BULLET_HEIGHT);
+  bullets.forEach(bullet => {
+    bullet.y -= 10;
+  });
+  
+  if (keys.space) {
+    bullets.push({
+      x: player.x + PLAYER_WIDTH/2 - BULLET_WIDTH/2,
+      y: player.y - BULLET_HEIGHT
+    });
+    keys.space = false;
+  }
+}
+
+function updateEnemies() {
+  enemies.forEach(enemy => {
+    enemy.y += enemy.speed;
+    enemy.x += enemy.direction * 2;
+    
+    if (enemy.x <= 0 || enemy.x >= beeCanvas.width - ENEMY_WIDTH) {
+      enemy.direction *= -1;
+    }
+    
+    if (enemy.y > beeCanvas.height) {
+      enemy.y = -ENEMY_HEIGHT;
+      enemy.x = Math.random() * (beeCanvas.width - ENEMY_WIDTH);
+      enemy.speed = 2 + Math.random() * 2;
+    }
+  });
+}
+
+function checkCollisions() {
+  enemies.forEach((enemy, enemyIndex) => {
+    bullets.forEach((bullet, bulletIndex) => {
+      if (
+        bullet.x < enemy.x + ENEMY_WIDTH &&
+        bullet.x + BULLET_WIDTH > enemy.x &&
+        bullet.y < enemy.y + ENEMY_HEIGHT &&
+        bullet.y + BULLET_HEIGHT > enemy.y
+      ) {
+        bullets.splice(bulletIndex, 1);
+        enemies.splice(enemyIndex, 1);
+        score += 100;
+        document.getElementById('beeScore').textContent = score;
+        
+        enemies.push({
+          x: Math.random() * (beeCanvas.width - ENEMY_WIDTH),
+          y: -ENEMY_HEIGHT,
+          speed: 2 + Math.random() * 2,
+          direction: Math.random() > 0.5 ? 1 : -1
+        });
+      }
+    });
+    
+    if (
+      player.x < enemy.x + ENEMY_WIDTH &&
+      player.x + PLAYER_WIDTH > enemy.x &&
+      player.y < enemy.y + ENEMY_HEIGHT &&
+      player.y + PLAYER_HEIGHT > enemy.y
+    ) {
+      lives--;
+      document.getElementById('beeLives').textContent = '❤️ '.repeat(lives);
+      
+      enemies.splice(enemyIndex, 1);
+      enemies.push({
+        x: Math.random() * (beeCanvas.width - ENEMY_WIDTH),
+        y: -ENEMY_HEIGHT,
+        speed: 2 + Math.random() * 2,
+        direction: Math.random() > 0.5 ? 1 : -1
+      });
+      
+      if (lives <= 0) {
+        beeGameOver();
+      }
+    }
+  });
+}
+
+function beeGameOver() {
+  clearInterval(gameLoop);
+  document.getElementById('beeFinalScore').textContent = score;
+  document.getElementById('beeGameOver').classList.add('show');
+}
+
+function drawBackground() {
+  beeCtx.fillStyle = '#87ceeb';
+  beeCtx.fillRect(0, 0, beeCanvas.width, beeCanvas.height);
+  
+  beeCtx.fillStyle = '#98d8c8';
+  beeCtx.fillRect(0, beeCanvas.height - 30, beeCanvas.width, 30);
+  
+  beeCtx.fillStyle = '#7fb8aa';
+  for (let i = 0; i < 10; i++) {
+    beeCtx.fillRect(i * 50, beeCanvas.height - 30, 30, 20);
+  }
+}
+
+function beeUpdate() {
+  if (isPaused) return;
+  
+  drawBackground();
+  updatePlayer();
+  updateBullets();
+  updateEnemies();
+  checkCollisions();
+  drawBullets();
+  drawEnemies();
+  drawPlayer();
+}
+
+function startBeeGame() {
+  initBeeGame();
+  if (gameLoop) clearInterval(gameLoop);
+  gameLoop = setInterval(beeUpdate, 20);
+}
+
+function pauseBeeGame() {
+  isPaused = !isPaused;
+}
+
+function restartBeeGame() {
+  document.getElementById('beeGameOver').classList.remove('show');
+  startBeeGame();
+}
+
+document.addEventListener('keydown', (e) => {
+  switch(e.key) {
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+      keys.left = true;
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      keys.right = true;
+      break;
+    case ' ':
+      e.preventDefault();
+      keys.space = true;
+      break;
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  switch(e.key) {
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+      keys.left = false;
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      keys.right = false;
+      break;
+  }
+});
+
+initBeeGame();
+drawBackground();
+drawPlayer();
+</script>
+</body>
+</html>
