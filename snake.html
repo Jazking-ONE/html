@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>贪吃蛇游戏</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.snake-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+.snake-header {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.score-box {
+  background: #1e3a5f;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.snake-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #e94560;
+  color: white;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+
+.snake-btn:hover {
+  background: #d6304a;
+}
+
+.snake-game {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+#snakeCanvas {
+  border-radius: 8px;
+  background: #16213e;
+}
+
+.snake-info {
+  margin-top: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.game-over-overlay.show {
+  display: flex;
+}
+
+.game-over-content {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.game-over-content h2 {
+  color: #e94560;
+  margin-bottom: 15px;
+}
+
+.game-over-content p {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.difficulty-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.diff-option {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 2px solid #ddd;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.diff-option.active {
+  border-color: #1e3a5f;
+  background: #1e3a5f;
+  color: white;
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="logo">化工实训装置</div>
+    <ul class="nav-links">
+      <li><a href="index.html">产品说明书</a></li>
+      <li><a href="minesweeper.html">扫雷游戏</a></li>
+      <li><a href="snake.html" class="active">贪吃蛇游戏</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>贪吃蛇游戏</h1>
+    <p>使用方向键或WASD控制蛇的移动</p>
+  </div>
+</header>
+
+<div class="snake-container">
+  <div class="difficulty-selector">
+    <div class="diff-option active" onclick="setSnakeDifficulty('easy')">简单</div>
+    <div class="diff-option" onclick="setSnakeDifficulty('medium')">中等</div>
+    <div class="diff-option" onclick="setSnakeDifficulty('hard')">困难</div>
+  </div>
+  
+  <div class="snake-header">
+    <div class="score-box">🍎 得分: <span id="score">0</span></div>
+    <button class="snake-btn" onclick="startGame()">开始游戏</button>
+    <button class="snake-btn" onclick="pauseGame()">暂停/继续</button>
+  </div>
+  
+  <div class="snake-game">
+    <canvas id="snakeCanvas" width="400" height="400"></canvas>
+  </div>
+  
+  <div class="snake-info">
+    <p>使用 ↑ ↓ ← → 或 W A S D 控制方向</p>
+    <p>吃到苹果得分，撞墙或撞到自己游戏结束</p>
+  </div>
+</div>
+
+<div class="game-over-overlay" id="gameOverOverlay">
+  <div class="game-over-content">
+    <h2>游戏结束!</h2>
+    <p>最终得分: <span id="finalScore">0</span></p>
+    <button class="snake-btn" onclick="restartGame()">重新开始</button>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-content">
+    <p>© 2024 化工控制实训装置 | 贪吃蛇游戏</p>
+  </div>
+</footer>
+
+<script>
+const canvas = document.getElementById('snakeCanvas');
+const ctx = canvas.getContext('2d');
+
+const gridSize = 20;
+const gridCount = canvas.width / gridSize;
+
+let snake = [];
+let direction = { x: 1, y: 0 };
+let food = {};
+let score = 0;
+let gameLoop = null;
+let isPaused = false;
+let speed = 100;
+
+function setSnakeDifficulty(level) {
+  document.querySelectorAll('.diff-option').forEach(d => d.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  switch(level) {
+    case 'easy': speed = 150; break;
+    case 'medium': speed = 100; break;
+    case 'hard': speed = 60; break;
+  }
+  
+  if (gameLoop) {
+    clearInterval(gameLoop);
+    gameLoop = setInterval(update, speed);
+  }
+}
+
+function initSnake() {
+  snake = [
+    { x: 10, y: 10 },
+    { x: 9, y: 10 },
+    { x: 8, y: 10 }
+  ];
+  direction = { x: 1, y: 0 };
+  score = 0;
+  isPaused = false;
+  spawnFood();
+  document.getElementById('score').textContent = score;
+  document.getElementById('gameOverOverlay').classList.remove('show');
+}
+
+function spawnFood() {
+  food = {
+    x: Math.floor(Math.random() * gridCount),
+    y: Math.floor(Math.random() * gridCount)
+  };
+  
+  while (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
+    food = {
+      x: Math.floor(Math.random() * gridCount),
+      y: Math.floor(Math.random() * gridCount)
+    };
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#16213e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.fillStyle = '#4ade80';
+  snake.forEach(segment => {
+    ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+  });
+  
+  ctx.fillStyle = '#f87171';
+  ctx.beginPath();
+  ctx.arc(
+    food.x * gridSize + gridSize / 2,
+    food.y * gridSize + gridSize / 2,
+    gridSize / 2,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+}
+
+function update() {
+  if (isPaused) return;
+  
+  const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+  
+  if (head.x < 0 || head.x >= gridCount || head.y < 0 || head.y >= gridCount) {
+    gameOver();
+    return;
+  }
+  
+  if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+    gameOver();
+    return;
+  }
+  
+  snake.unshift(head);
+  
+  if (head.x === food.x && head.y === food.y) {
+    score += 10;
+    document.getElementById('score').textContent = score;
+    spawnFood();
+  } else {
+    snake.pop();
+  }
+  
+  draw();
+}
+
+function gameOver() {
+  clearInterval(gameLoop);
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('gameOverOverlay').classList.add('show');
+}
+
+function startGame() {
+  initSnake();
+  if (gameLoop) clearInterval(gameLoop);
+  gameLoop = setInterval(update, speed);
+}
+
+function pauseGame() {
+  isPaused = !isPaused;
+}
+
+function restartGame() {
+  document.getElementById('gameOverOverlay').classList.remove('show');
+  startGame();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!gameLoop) return;
+  
+  switch(e.key) {
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      if (direction.y !== 1) direction = { x: 0, y: -1 };
+      break;
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      if (direction.y !== -1) direction = { x: 0, y: 1 };
+      break;
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+      if (direction.x !== 1) direction = { x: -1, y: 0 };
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      if (direction.x !== -1) direction = { x: 1, y: 0 };
+      break;
+    case ' ':
+      pauseGame();
+      break;
+  }
+});
+
+initSnake();
+draw();
+</script>
+</body>
+</html>
