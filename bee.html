@@ -240,38 +240,145 @@ function drawPlayer() {
   beeCtx.translate(player.x + player.width/2, player.y + player.height/2);
   beeCtx.rotate(angle);
   
-  beeCtx.fillStyle = '#2563eb';
+  const w = player.width;
+  const h = player.height;
+  
+  if (level >= 3) {
+    drawWings(w, h);
+  }
+  
+  beeCtx.fillStyle = '#1e40af';
   beeCtx.beginPath();
-  beeCtx.moveTo(0, -player.height/2);
-  beeCtx.lineTo(-player.width/2, player.height/2);
-  beeCtx.lineTo(player.width/2, player.height/2);
+  beeCtx.moveTo(0, -h/2);
+  beeCtx.lineTo(-w/4, h/2);
+  beeCtx.lineTo(w/4, h/2);
   beeCtx.closePath();
   beeCtx.fill();
+  
+  if (level >= 2) {
+    beeCtx.fillStyle = '#bfdbfe';
+    beeCtx.beginPath();
+    beeCtx.moveTo(-5, -h/3);
+    beeCtx.lineTo(-3, h/4);
+    beeCtx.lineTo(3, h/4);
+    beeCtx.lineTo(5, -h/3);
+    beeCtx.closePath();
+    beeCtx.fill();
+  }
   
   beeCtx.fillStyle = '#1d4ed8';
   beeCtx.beginPath();
-  beeCtx.moveTo(-8, player.height/2);
-  beeCtx.lineTo(0, player.height/2 + 12);
-  beeCtx.lineTo(8, player.height/2);
+  beeCtx.moveTo(-w/6, h/2);
+  beeCtx.lineTo(0, h/2 + h/5);
+  beeCtx.lineTo(w/6, h/2);
   beeCtx.closePath();
   beeCtx.fill();
   
-  beeCtx.fillStyle = '#60a5fa';
-  beeCtx.beginPath();
-  beeCtx.moveTo(-10, player.height/2 - 5);
-  beeCtx.lineTo(-15, player.height/2 + 8);
-  beeCtx.lineTo(-5, player.height/2);
-  beeCtx.closePath();
-  beeCtx.fill();
-  
-  beeCtx.beginPath();
-  beeCtx.moveTo(10, player.height/2 - 5);
-  beeCtx.lineTo(15, player.height/2 + 8);
-  beeCtx.lineTo(5, player.height/2);
-  beeCtx.closePath();
-  beeCtx.fill();
+  if (level >= 4) {
+    drawTail(w, h);
+    drawCockpit(w, h);
+    drawEngines(w, h);
+  } else if (level >= 2) {
+    drawSideWings(w, h);
+  }
   
   beeCtx.restore();
+}
+
+function drawWings(w, h) {
+  beeCtx.fillStyle = '#0f172a';
+  const wingSpan = w * 1.8;
+  const wingLength = h * 0.4;
+  
+  beeCtx.beginPath();
+  beeCtx.moveTo(-wingSpan/2, h/4);
+  beeCtx.lineTo(-w/5, h/4);
+  beeCtx.lineTo(-w/6, h/4 + wingLength);
+  beeCtx.lineTo(-wingSpan/2, h/4 + wingLength * 0.8);
+  beeCtx.closePath();
+  beeCtx.fill();
+  
+  beeCtx.beginPath();
+  beeCtx.moveTo(wingSpan/2, h/4);
+  beeCtx.lineTo(w/5, h/4);
+  beeCtx.lineTo(w/6, h/4 + wingLength);
+  beeCtx.lineTo(wingSpan/2, h/4 + wingLength * 0.8);
+  beeCtx.closePath();
+  beeCtx.fill();
+}
+
+function drawSideWings(w, h) {
+  beeCtx.fillStyle = '#3b82f6';
+  beeCtx.beginPath();
+  beeCtx.moveTo(-w/3, h/2 - 8);
+  beeCtx.lineTo(-w/2 - 10, h/2 + 5);
+  beeCtx.lineTo(-w/3 + 5, h/2);
+  beeCtx.closePath();
+  beeCtx.fill();
+  
+  beeCtx.beginPath();
+  beeCtx.moveTo(w/3, h/2 - 8);
+  beeCtx.lineTo(w/2 + 10, h/2 + 5);
+  beeCtx.lineTo(w/3 - 5, h/2);
+  beeCtx.closePath();
+  beeCtx.fill();
+}
+
+function drawTail(w, h) {
+  beeCtx.fillStyle = '#1e3a5f';
+  beeCtx.beginPath();
+  beeCtx.moveTo(-w/6, h/2);
+  beeCtx.lineTo(-w/10, h/2 + h/3);
+  beeCtx.lineTo(-w/8, h/2);
+  beeCtx.closePath();
+  beeCtx.fill();
+  
+  beeCtx.beginPath();
+  beeCtx.moveTo(w/6, h/2);
+  beeCtx.lineTo(w/10, h/2 + h/3);
+  beeCtx.lineTo(w/8, h/2);
+  beeCtx.closePath();
+  beeCtx.fill();
+  
+  beeCtx.fillStyle = '#0f172a';
+  beeCtx.beginPath();
+  beeCtx.moveTo(-3, h/2);
+  beeCtx.lineTo(0, h/2 + h/2.5);
+  beeCtx.lineTo(3, h/2);
+  beeCtx.closePath();
+  beeCtx.fill();
+}
+
+function drawCockpit(w, h) {
+  beeCtx.fillStyle = '#67e8f9';
+  beeCtx.beginPath();
+  beeCtx.ellipse(0, -h/4, w/8, h/6, 0, 0, Math.PI * 2);
+  beeCtx.fill();
+  
+  beeCtx.fillStyle = '#22d3ee';
+  beeCtx.beginPath();
+  beeCtx.ellipse(0, -h/4, w/12, h/10, 0, 0, Math.PI * 2);
+  beeCtx.fill();
+}
+
+function drawEngines(w, h) {
+  beeCtx.fillStyle = '#374151';
+  beeCtx.beginPath();
+  beeCtx.ellipse(-w/3, h/4, w/12, h/8, 0, 0, Math.PI * 2);
+  beeCtx.fill();
+  
+  beeCtx.beginPath();
+  beeCtx.ellipse(w/3, h/4, w/12, h/8, 0, 0, Math.PI * 2);
+  beeCtx.fill();
+  
+  beeCtx.fillStyle = '#fbbf24';
+  beeCtx.beginPath();
+  beeCtx.ellipse(-w/3 - w/12, h/4, 3, h/12, 0, 0, Math.PI * 2);
+  beeCtx.fill();
+  
+  beeCtx.beginPath();
+  beeCtx.ellipse(w/3 + w/12, h/4, 3, h/12, 0, 0, Math.PI * 2);
+  beeCtx.fill();
 }
 
 function drawBullets() {
