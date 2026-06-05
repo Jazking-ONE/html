@@ -185,6 +185,15 @@
       cursor: not-allowed;
     }
     
+    .paren-btn {
+      background: #f59e0b;
+      color: white;
+    }
+    
+    .paren-btn:hover {
+      background: #d97706;
+    }
+    
     .controls {
       display: flex;
       gap: 15px;
@@ -331,6 +340,8 @@
     <button class="op-btn" onclick="applyOperator('-')">-</button>
     <button class="op-btn" onclick="applyOperator('×')">×</button>
     <button class="op-btn" onclick="applyOperator('÷')">÷</button>
+    <button class="op-btn paren-btn" onclick="applyOperator('(')">（</button>
+    <button class="op-btn paren-btn" onclick="applyOperator(')')">）</button>
   </div>
   
   <div class="controls">
@@ -377,6 +388,7 @@ function newGame() {
   cards.length = 0;
   usedCards.length = 0;
   expression.length = 0;
+  openParens = 0;
   hintShown = false;
   
   for (let i = 0; i < 4; i++) {
@@ -424,12 +436,39 @@ function selectCard(index) {
   drawCards();
 }
 
+let openParens = 0;
+
 function applyOperator(op) {
-  if (expression.length === 0) return;
-  if (expression[expression.length - 1].type === 'operator') return;
-  if (usedCards.length >= 4 && expression.length >= 7) return;
+  if (op === '(') {
+    expression.push({ type: 'paren', value: '(', display: '(' });
+    openParens++;
+    updateExpression();
+    return;
+  }
   
-  expression.push({ type: 'operator', value: op });
+  if (op === ')') {
+    if (openParens > 0 && expression.length > 0 && expression[expression.length - 1].type !== 'operator' && expression[expression.length - 1].value !== '(') {
+      expression.push({ type: 'paren', value: ')', display: ')' });
+      openParens--;
+      updateExpression();
+    }
+    return;
+  }
+  
+  if (expression.length === 0) {
+    if (op === '-' || op === '+') {
+      expression.push({ type: 'operator', value: op, display: op });
+      updateExpression();
+      return;
+    }
+    return;
+  }
+  
+  const last = expression[expression.length - 1];
+  if (last.type === 'operator' && !(last.value === '-' || last.value === '+')) return;
+  if (last.value === '(') return;
+  
+  expression.push({ type: 'operator', value: op, display: op });
   updateExpression();
 }
 
@@ -442,6 +481,7 @@ function updateExpression() {
 function clearExpression() {
   expression.length = 0;
   usedCards.length = 0;
+  openParens = 0;
   hintShown = false;
   updateExpression();
   drawCards();
@@ -459,12 +499,22 @@ function parseOperator(op) {
 }
 
 function checkAnswer() {
-  if (expression.length !== 7) {
-    showMessage('请输入完整的表达式！', 'error');
+  const numCount = expression.filter(e => e.type === 'number').length;
+  if (numCount !== 4) {
+    showMessage(`请使用全部4个数字！当前使用了${numCount}个`, 'error');
     return;
   }
   
-  const expr = expression.map(e => e.type === 'number' ? e.value : parseOperator(e.value)).join('');
+  if (openParens !== 0) {
+    showMessage('括号不匹配！', 'error');
+    return;
+  }
+  
+  const expr = expression.map(e => {
+    if (e.type === 'number') return e.value;
+    if (e.type === 'paren') return e.value;
+    return parseOperator(e.value);
+  }).join('');
   
   try {
     const result = eval(expr);
