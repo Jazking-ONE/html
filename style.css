@@ -236,9 +236,105 @@ body {
   font-size: 2rem;
 }
 
+.control-modes h2 {
+  color: #1e3a5f;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.mode-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  border-left: 4px solid #2d5a87;
+}
+
+.mode-card h3 {
+  color: #1e3a5f;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.mode-card p {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.mode-card ul {
+  list-style: none;
+}
+
+.mode-card li {
+  padding: 0.5rem 0;
+  color: #555;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.mode-card li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #2d5a87;
+}
+
+.mqtt-section h2 {
+  color: #1e3a5f;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.mqtt-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.mqtt-topic, .mqtt-payload {
+  background: #1e3a5f;
+  color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.mqtt-topic h4, .mqtt-payload h4 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.mqtt-topic code {
+  background: rgba(255,255,255,0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: block;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.mqtt-payload pre {
+  background: rgba(255,255,255,0.1);
+  padding: 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+
 @media (max-width: 768px) {
   .nav-links {
-    gap: 1rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .nav-links a {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.9rem;
   }
   
   .hero-content h1 {

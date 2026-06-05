@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆翻牌 - PCT-100 小游戏</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.memory-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  max-width: 500px;
+  padding: 20px;
+}
+
+.card {
+  width: 100px;
+  height: 120px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.card-front {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+  color: #fff;
+  font-size: 3rem;
+}
+
+.card-back {
+  background: #fff;
+  transform: rotateY(180deg);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.card.matched .card-back {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+}
+
+.game-info {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  text-align: center;
+}
+
+.info-item label {
+  display: block;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.info-item span {
+  display: block;
+  color: #1e3a5f;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.game-controls {
+  margin-top: 20px;
+}
+
+.game-controls button {
+  background: #2d5a87;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 5px;
+  margin: 0 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.game-controls button:hover {
+  background: #3d7ab7;
+}
+
+.game-won-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.9);
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  color: #fff;
+  z-index: 100;
+}
+
+.game-won-overlay h2 {
+  color: #22c55e;
+  margin-bottom: 15px;
+  font-size: 2rem;
+}
+
+.game-won-overlay p {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.game-won-overlay button {
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 15px;
+}
+
+.difficulty-selector {
+  margin-bottom: 20px;
+}
+
+.difficulty-selector label {
+  margin-right: 10px;
+  color: #666;
+}
+
+.difficulty-selector select {
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: 2px solid #2d5a87;
+  background: #fff;
+  color: #1e3a5f;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+@media (max-width: 500px) {
+  .game-board {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .card {
+    width: 70px;
+    height: 85px;
+  }
+  
+  .card-front, .card-back {
+    font-size: 1.8rem;
+  }
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="logo">PCT-100</div>
+    <ul class="nav-links">
+      <li><a href="index.html">产品说明书</a></li>
+      <li><a href="minesweeper.html">扫雷游戏</a></li>
+      <li><a href="snake.html">贪吃蛇游戏</a></li>
+      <li><a href="bee.html">小蜜蜂游戏</a></li>
+      <li><a href="tetris.html">俄罗斯方块</a></li>
+      <li><a href="memory.html" class="active">记忆翻牌</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>记忆翻牌游戏</h1>
+    <p>翻开卡片，找出所有配对！</p>
+  </div>
+</header>
+
+<main class="main-content">
+  <div class="memory-game">
+    <div class="difficulty-selector">
+      <label for="difficulty">难度选择:</label>
+      <select id="difficulty" onchange="changeDifficulty()">
+        <option value="4x3">简单 (4×3)</option>
+        <option value="4x4" selected>中等 (4×4)</option>
+        <option value="6x4">困难 (6×4)</option>
+      </select>
+    </div>
+    
+    <div class="game-info">
+      <div class="info-item">
+        <label>步数</label>
+        <span id="moves">0</span>
+      </div>
+      <div class="info-item">
+        <label>时间</label>
+        <span id="time">00:00</span>
+      </div>
+      <div class="info-item">
+        <label>配对</label>
+        <span id="matches">0</span>
+      </div>
+    </div>
+    
+    <div id="gameBoard" class="game-board"></div>
+    
+    <div class="game-controls">
+      <button onclick="startNewGame()">开始新游戏</button>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <p>© 2024 PCT-100 化工过程控制实训装置 | 小游戏</p>
+  </div>
+</footer>
+
+<script>
+const EMOJIS = ['🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎬', '🎤', '🎧', '🎼', '🎹', '🎺'];
+
+let cards = [];
+let flippedCards = [];
+let moves = 0;
+let matches = 0;
+let startTime = null;
+let timerInterval = null;
+let isProcessing = false;
+let gridSize = { rows: 4, cols: 4 };
+
+function initGame() {
+  stopTimer();
+  moves = 0;
+  matches = 0;
+  
+  const totalCards = gridSize.rows * gridSize.cols;
+  const pairsNeeded = totalCards / 2;
+  const selectedEmojis = EMOJIS.slice(0, pairsNeeded);
+  cards = [...selectedEmojis, ...selectedEmojis];
+  
+  shuffleArray(cards);
+  
+  renderBoard();
+  updateInfo();
+  
+  document.getElementById('time').textContent = '00:00';
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function renderBoard() {
+  const board = document.getElementById('gameBoard');
+  board.innerHTML = '';
+  
+  cards.forEach((emoji, index) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.index = index;
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-front">?</div>
+        <div class="card-back">${emoji}</div>
+      </div>
+    `;
+    card.addEventListener('click', flipCard);
+    board.appendChild(card);
+  });
+}
+
+function flipCard(e) {
+  if (isProcessing) return;
+  
+  const card = e.currentTarget;
+  
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) {
+    return;
+  }
+  
+  if (flippedCards.length >= 2) return;
+  
+  card.classList.add('flipped');
+  flippedCards.push(card);
+  
+  if (flippedCards.length === 2) {
+    moves++;
+    updateInfo();
+    
+    if (!startTime) {
+      startTime = Date.now();
+      startTimer();
+    }
+    
+    checkMatch();
+  }
+}
+
+function checkMatch() {
+  isProcessing = true;
+  
+  const card1 = flippedCards[0];
+  const card2 = flippedCards[1];
+  
+  const index1 = parseInt(card1.dataset.index);
+  const index2 = parseInt(card2.dataset.index);
+  
+  if (cards[index1] === cards[index2]) {
+    setTimeout(() => {
+      card1.classList.add('matched');
+      card2.classList.add('matched');
+      flippedCards = [];
+      isProcessing = false;
+      
+      matches++;
+      updateInfo();
+      
+      if (matches === cards.length / 2) {
+        stopTimer();
+        showWin();
+      }
+    }, 500);
+  } else {
+    setTimeout(() => {
+      card1.classList.remove('flipped');
+      card2.classList.remove('flipped');
+      flippedCards = [];
+      isProcessing = false;
+    }, 1000);
+  }
+}
+
+function updateInfo() {
+  document.getElementById('moves').textContent = moves;
+  document.getElementById('matches').textContent = matches;
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    document.getElementById('time').textContent = 
+      `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  startTime = null;
+}
+
+function showWin() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'game-won-overlay';
+  overlay.innerHTML = `
+    <h2>🎉 恭喜通关!</h2>
+    <p>步数: ${moves}</p>
+    <p>用时: ${timeStr}</p>
+    <button onclick="startNewGame(); document.body.removeChild(this.parentElement);">再玩一次</button>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function startNewGame() {
+  initGame();
+}
+
+function changeDifficulty() {
+  const selected = document.getElementById('difficulty').value;
+  const [cols, rows] = selected.split('x').map(Number);
+  gridSize = { rows, cols };
+  
+  const board = document.getElementById('gameBoard');
+  board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  
+  initGame();
+}
+
+initGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>俄罗斯方块 - PCT-100 小游戏</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.game-board {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.board-container {
+  background: #1e3a5f;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 1px;
+  background: #0d1b2a;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.cell {
+  width: 30px;
+  height: 30px;
+  background: #1b263b;
+  border-radius: 2px;
+}
+
+.cell.filled {
+  background: #415a77;
+}
+
+.cell.I { background: #00f5ff; }
+.cell.O { background: #ffd700; }
+.cell.T { background: #a855f7; }
+.cell.S { background: #22c55e; }
+.cell.Z { background: #ef4444; }
+.cell.J { background: #3b82f6; }
+.cell.L { background: #f97316; }
+
+.next-container {
+  background: #1e3a5f;
+  padding: 15px;
+  border-radius: 8px;
+  min-width: 120px;
+}
+
+.next-container h3 {
+  color: #fff;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#next-piece {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #0d1b2a;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.next-cell {
+  width: 20px;
+  height: 20px;
+  background: #1b263b;
+  border-radius: 2px;
+}
+
+.next-cell.filled.I { background: #00f5ff; }
+.next-cell.filled.O { background: #ffd700; }
+.next-cell.filled.T { background: #a855f7; }
+.next-cell.filled.S { background: #22c55e; }
+.next-cell.filled.Z { background: #ef4444; }
+.next-cell.filled.J { background: #3b82f6; }
+.next-cell.filled.L { background: #f97316; }
+
+.info-panel {
+  background: #1e3a5f;
+  padding: 15px;
+  border-radius: 8px;
+  min-width: 150px;
+}
+
+.info-panel h3 {
+  color: #fff;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.info-panel p {
+  color: #fff;
+  margin: 5px 0;
+  font-size: 0.9rem;
+}
+
+.info-panel .value {
+  font-weight: bold;
+  color: #00f5ff;
+}
+
+.game-controls {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.game-controls button {
+  background: #2d5a87;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin: 0 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.game-controls button:hover {
+  background: #3d7ab7;
+}
+
+.key-hints {
+  margin-top: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.key-hints p {
+  margin: 5px 0;
+}
+
+.game-over-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.9);
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  color: #fff;
+}
+
+.game-over-overlay h2 {
+  color: #ef4444;
+  margin-bottom: 15px;
+}
+
+.game-over-overlay p {
+  margin-bottom: 15px;
+}
+
+.game-over-overlay button {
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="logo">PCT-100</div>
+    <ul class="nav-links">
+      <li><a href="index.html">产品说明书</a></li>
+      <li><a href="minesweeper.html">扫雷游戏</a></li>
+      <li><a href="snake.html">贪吃蛇游戏</a></li>
+      <li><a href="bee.html">小蜜蜂游戏</a></li>
+      <li><a href="tetris.html" class="active">俄罗斯方块</a></li>
+      <li><a href="memory.html">记忆翻牌</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>俄罗斯方块</h1>
+    <p>经典益智游戏，挑战你的反应能力！</p>
+  </div>
+</header>
+
+<main class="main-content">
+  <div class="game-container">
+    <div class="game-board">
+      <div class="board-container">
+        <div id="board"></div>
+      </div>
+      
+      <div class="side-panel">
+        <div class="next-container">
+          <h3>下一个</h3>
+          <div id="next-piece"></div>
+        </div>
+        
+        <div class="info-panel">
+          <h3>游戏信息</h3>
+          <p>得分: <span class="value" id="score">0</span></p>
+          <p>等级: <span class="value" id="level">1</span></p>
+          <p>行数: <span class="value" id="lines">0</span></p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="game-controls">
+      <button onclick="startGame()">开始游戏</button>
+      <button onclick="pauseGame()">暂停</button>
+      <button onclick="resetGame()">重新开始</button>
+    </div>
+    
+    <div class="key-hints">
+      <p><strong>操作说明:</strong></p>
+      <p>← → 左右移动 | ↑ 旋转 | ↓ 加速下落 | 空格 直接落下</p>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <p>© 2024 PCT-100 化工过程控制实训装置 | 小游戏</p>
+  </div>
+</footer>
+
+<script>
+const BOARD_WIDTH = 10;
+const BOARD_HEIGHT = 20;
+const CELL_SIZE = 30;
+
+const TETROMINOS = {
+  I: [
+    [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
+    [[0,0,1,0], [0,0,1,0], [0,0,1,0], [0,0,1,0]]
+  ],
+  O: [
+    [[1,1], [1,1]]
+  ],
+  T: [
+    [[0,1,0], [1,1,1], [0,0,0]],
+    [[0,1,0], [0,1,1], [0,1,0]],
+    [[0,0,0], [1,1,1], [0,1,0]],
+    [[0,1,0], [1,1,0], [0,1,0]]
+  ],
+  S: [
+    [[0,1,1], [1,1,0], [0,0,0]],
+    [[0,1,0], [0,1,1], [0,0,1]]
+  ],
+  Z: [
+    [[1,1,0], [0,1,1], [0,0,0]],
+    [[0,0,1], [0,1,1], [0,1,0]]
+  ],
+  J: [
+    [[1,0,0], [1,1,1], [0,0,0]],
+    [[0,1,1], [0,1,0], [0,1,0]],
+    [[0,0,0], [1,1,1], [0,0,1]],
+    [[0,1,0], [0,1,0], [1,1,0]]
+  ],
+  L: [
+    [[0,0,1], [1,1,1], [0,0,0]],
+    [[0,1,0], [0,1,0], [0,1,1]],
+    [[0,0,0], [1,1,1], [1,0,0]],
+    [[1,1,0], [0,1,0], [0,1,0]]
+  ]
+};
+
+const COLORS = {
+  I: 'I',
+  O: 'O',
+  T: 'T',
+  S: 'S',
+  Z: 'Z',
+  J: 'J',
+  L: 'L'
+};
+
+let board = [];
+let currentPiece = null;
+let currentPosition = { x: 0, y: 0 };
+let nextPiece = null;
+let score = 0;
+let level = 1;
+let lines = 0;
+let gameInterval = null;
+let isPaused = false;
+let gameOver = false;
+
+function initBoard() {
+  board = [];
+  for (let y = 0; y < BOARD_HEIGHT; y++) {
+    board[y] = [];
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      board[y][x] = null;
+    }
+  }
+}
+
+function createPiece(type) {
+  const shapes = TETROMINOS[type];
+  return {
+    type: type,
+    shape: shapes[0],
+    rotation: 0
+  };
+}
+
+function randomPiece() {
+  const types = Object.keys(TETROMINOS);
+  const type = types[Math.floor(Math.random() * types.length)];
+  return createPiece(type);
+}
+
+function spawnPiece() {
+  currentPiece = nextPiece || randomPiece();
+  nextPiece = randomPiece();
+  currentPosition = {
+    x: Math.floor((BOARD_WIDTH - currentPiece.shape[0].length) / 2),
+    y: 0
+  };
+  
+  if (!isValidMove(currentPiece, currentPosition)) {
+    gameOver = true;
+    showGameOver();
+  }
+  
+  updateNextPiece();
+}
+
+function isValidMove(piece, position) {
+  for (let y = 0; y < piece.shape.length; y++) {
+    for (let x = 0; x < piece.shape[y].length; x++) {
+      if (piece.shape[y][x]) {
+        const newX = position.x + x;
+        const newY = position.y + y;
+        if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
+          return false;
+        }
+        if (newY >= 0 && board[newY][newX]) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+function lockPiece() {
+  for (let y = 0; y < currentPiece.shape.length; y++) {
+    for (let x = 0; x < currentPiece.shape[y].length; x++) {
+      if (currentPiece.shape[y][x]) {
+        const boardY = currentPosition.y + y;
+        const boardX = currentPosition.x + x;
+        if (boardY >= 0) {
+          board[boardY][boardX] = currentPiece.type;
+        }
+      }
+    }
+  }
+  
+  clearLines();
+  spawnPiece();
+}
+
+function clearLines() {
+  let clearedLines = 0;
+  
+  for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+    if (board[y].every(cell => cell !== null)) {
+      board.splice(y, 1);
+      board.unshift(new Array(BOARD_WIDTH).fill(null));
+      clearedLines++;
+      y++;
+    }
+  }
+  
+  if (clearedLines > 0) {
+    lines += clearedLines;
+    const points = [0, 100, 300, 500, 800];
+    score += points[clearedLines] * level;
+    
+    if (lines >= level * 10) {
+      level++;
+      clearInterval(gameInterval);
+      gameInterval = setInterval(gameLoop, Math.max(100, 1000 - (level - 1) * 100));
+    }
+    
+    updateScore();
+  }
+}
+
+function movePiece(dx, dy) {
+  if (isPaused || gameOver) return;
+  
+  const newPosition = { x: currentPosition.x + dx, y: currentPosition.y + dy };
+  if (isValidMove(currentPiece, newPosition)) {
+    currentPosition = newPosition;
+    renderBoard();
+    return true;
+  } else if (dy > 0) {
+    lockPiece();
+  }
+  return false;
+}
+
+function rotatePiece() {
+  if (isPaused || gameOver) return;
+  
+  const shapes = TETROMINOS[currentPiece.type];
+  const newRotation = (currentPiece.rotation + 1) % shapes.length;
+  const originalShape = currentPiece.shape;
+  
+  currentPiece.shape = shapes[newRotation];
+  currentPiece.rotation = newRotation;
+  
+  if (!isValidMove(currentPiece, currentPosition)) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const newPosition = { x: currentPosition.x + dx, y: currentPosition.y };
+      if (isValidMove(currentPiece, newPosition)) {
+        currentPosition = newPosition;
+        renderBoard();
+        return;
+      }
+    }
+    
+    currentPiece.shape = originalShape;
+    currentPiece.rotation = (currentPiece.rotation - 1 + shapes.length) % shapes.length;
+  }
+  
+  renderBoard();
+}
+
+function dropPiece() {
+  if (isPaused || gameOver) return;
+  
+  while (movePiece(0, 1)) {}
+}
+
+function gameLoop() {
+  if (!isPaused && !gameOver) {
+    movePiece(0, 1);
+  }
+}
+
+function renderBoard() {
+  const boardElement = document.getElementById('board');
+  boardElement.innerHTML = '';
+  
+  const displayBoard = board.map(row => [...row]);
+  
+  if (currentPiece) {
+    for (let y = 0; y < currentPiece.shape.length; y++) {
+      for (let x = 0; x < currentPiece.shape[y].length; x++) {
+        if (currentPiece.shape[y][x]) {
+          const boardY = currentPosition.y + y;
+          const boardX = currentPosition.x + x;
+          if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
+            displayBoard[boardY][boardX] = currentPiece.type;
+          }
+        }
+      }
+    }
+  }
+  
+  for (let y = 0; y < BOARD_HEIGHT; y++) {
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (displayBoard[y][x] ? ' filled ' + displayBoard[y][x] : '');
+      boardElement.appendChild(cell);
+    }
+  }
+}
+
+function updateNextPiece() {
+  const nextElement = document.getElementById('next-piece');
+  nextElement.innerHTML = '';
+  
+  const emptyGrid = [
+    [0,0,0,0],
+    [0,0,0,0],
+    [0,0,0,0],
+    [0,0,0,0]
+  ];
+  
+  if (nextPiece) {
+    const shape = nextPiece.shape;
+    const offsetY = Math.floor((4 - shape.length) / 2);
+    const offsetX = Math.floor((4 - shape[0].length) / 2);
+    
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (shape[y][x]) {
+          emptyGrid[y + offsetY][x + offsetX] = nextPiece.type;
+        }
+      }
+    }
+  }
+  
+  for (let y = 0; y < 4; y++) {
+    for (let x = 0; x < 4; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'next-cell' + (emptyGrid[y][x] ? ' filled ' + emptyGrid[y][x] : '');
+      nextElement.appendChild(cell);
+    }
+  }
+}
+
+function updateScore() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('level').textContent = level;
+  document.getElementById('lines').textContent = lines;
+}
+
+function startGame() {
+  if (gameInterval) return;
+  
+  isPaused = false;
+  gameInterval = setInterval(gameLoop, 1000);
+}
+
+function pauseGame() {
+  isPaused = !isPaused;
+}
+
+function resetGame() {
+  clearInterval(gameInterval);
+  gameInterval = null;
+  
+  initBoard();
+  score = 0;
+  level = 1;
+  lines = 0;
+  isPaused = false;
+  gameOver = false;
+  
+  updateScore();
+  spawnPiece();
+  renderBoard();
+}
+
+function showGameOver() {
+  clearInterval(gameInterval);
+  gameInterval = null;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'game-over-overlay';
+  overlay.innerHTML = `
+    <h2>游戏结束!</h2>
+    <p>最终得分: ${score}</p>
+    <p>等级: ${level}</p>
+    <p>消除行数: ${lines}</p>
+    <button onclick="resetGame(); document.body.removeChild(this.parentElement);">重新开始</button>
+  `;
+  document.body.appendChild(overlay);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (gameOver) return;
+  
+  switch (e.key) {
+    case 'ArrowLeft':
+      e.preventDefault();
+      movePiece(-1, 0);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      movePiece(1, 0);
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      movePiece(0, 1);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      rotatePiece();
+      break;
+    case ' ':
+      e.preventDefault();
+      dropPiece();
+      break;
+    case 'p':
+    case 'P':
+      pauseGame();
+      break;
+  }
+});
+
+resetGame();
+</script>
+</body>
+</html>
