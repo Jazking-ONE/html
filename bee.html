@@ -151,7 +151,8 @@
 <div class="bee-container">
   <div class="bee-header">
     <div class="bee-score-box">🏆 得分: <span id="beeScore">0</span></div>
-    <div class="bee-lives" id="beeLives">❤️ ❤️ ❤️</div>
+    <div class="bee-score-box">❤️ 生命: <span id="beeLives">3</span></div>
+    <div class="bee-score-box">⭐ 等级: <span id="beeLevel">1</span></div>
     <button class="bee-btn" onclick="startBeeGame()">开始游戏</button>
     <button class="bee-btn" onclick="pauseBeeGame()">暂停/继续</button>
   </div>
@@ -178,32 +179,36 @@
 const beeCanvas = document.getElementById('beeCanvas');
 const beeCtx = beeCanvas.getContext('2d');
 
-const PLAYER_WIDTH = 50;
-const PLAYER_HEIGHT = 40;
+const BASE_PLAYER_WIDTH = 50;
+const BASE_PLAYER_HEIGHT = 40;
 const BULLET_WIDTH = 6;
 const BULLET_HEIGHT = 6;
 const ENEMY_WIDTH = 40;
 const ENEMY_HEIGHT = 30;
 
-let player = { x: 250, y: 350, speed: 6 };
+let player = { x: 250, y: 350, speed: 6, width: BASE_PLAYER_WIDTH, height: BASE_PLAYER_HEIGHT };
 let bullets = [];
 let enemies = [];
 let score = 0;
 let lives = 3;
+let killCount = 0;
+let level = 1;
 let gameLoop = null;
 let isPaused = false;
 let keys = { left: false, right: false, up: false, down: false, space: false };
 let mousePos = { x: 250, y: 200 };
 
 function initBeeGame() {
-  player = { x: 250, y: 350, speed: 6 };
+  player = { x: 250, y: 350, speed: 6, width: BASE_PLAYER_WIDTH, height: BASE_PLAYER_HEIGHT };
   bullets = [];
   enemies = [];
   score = 0;
   lives = 3;
+  killCount = 0;
+  level = 1;
   isPaused = false;
-  document.getElementById('beeScore').textContent = score;
-  document.getElementById('beeLives').textContent = '❤️ '.repeat(lives);
+  updateScoreDisplay();
+  updateLivesDisplay();
   document.getElementById('beeGameOver').classList.remove('show');
   
   for (let i = 0; i < 5; i++) {
@@ -216,44 +221,53 @@ function initBeeGame() {
   }
 }
 
+function updateScoreDisplay() {
+  document.getElementById('beeScore').textContent = score;
+  document.getElementById('beeLevel').textContent = level;
+}
+
+function updateLivesDisplay() {
+  document.getElementById('beeLives').textContent = lives;
+}
+
 function drawPlayer() {
   beeCtx.save();
   
-  const dx = mousePos.x - (player.x + PLAYER_WIDTH/2);
-  const dy = mousePos.y - (player.y + PLAYER_HEIGHT/2);
+  const dx = mousePos.x - (player.x + player.width/2);
+  const dy = mousePos.y - (player.y + player.height/2);
   const angle = Math.atan2(dy, dx);
   
-  beeCtx.translate(player.x + PLAYER_WIDTH/2, player.y + PLAYER_HEIGHT/2);
+  beeCtx.translate(player.x + player.width/2, player.y + player.height/2);
   beeCtx.rotate(angle);
   
   beeCtx.fillStyle = '#2563eb';
   beeCtx.beginPath();
-  beeCtx.moveTo(0, -PLAYER_HEIGHT/2);
-  beeCtx.lineTo(-PLAYER_WIDTH/2, PLAYER_HEIGHT/2);
-  beeCtx.lineTo(PLAYER_WIDTH/2, PLAYER_HEIGHT/2);
+  beeCtx.moveTo(0, -player.height/2);
+  beeCtx.lineTo(-player.width/2, player.height/2);
+  beeCtx.lineTo(player.width/2, player.height/2);
   beeCtx.closePath();
   beeCtx.fill();
   
   beeCtx.fillStyle = '#1d4ed8';
   beeCtx.beginPath();
-  beeCtx.moveTo(-8, PLAYER_HEIGHT/2);
-  beeCtx.lineTo(0, PLAYER_HEIGHT/2 + 12);
-  beeCtx.lineTo(8, PLAYER_HEIGHT/2);
+  beeCtx.moveTo(-8, player.height/2);
+  beeCtx.lineTo(0, player.height/2 + 12);
+  beeCtx.lineTo(8, player.height/2);
   beeCtx.closePath();
   beeCtx.fill();
   
   beeCtx.fillStyle = '#60a5fa';
   beeCtx.beginPath();
-  beeCtx.moveTo(-10, PLAYER_HEIGHT/2 - 5);
-  beeCtx.lineTo(-15, PLAYER_HEIGHT/2 + 8);
-  beeCtx.lineTo(-5, PLAYER_HEIGHT/2);
+  beeCtx.moveTo(-10, player.height/2 - 5);
+  beeCtx.lineTo(-15, player.height/2 + 8);
+  beeCtx.lineTo(-5, player.height/2);
   beeCtx.closePath();
   beeCtx.fill();
   
   beeCtx.beginPath();
-  beeCtx.moveTo(10, PLAYER_HEIGHT/2 - 5);
-  beeCtx.lineTo(15, PLAYER_HEIGHT/2 + 8);
-  beeCtx.lineTo(5, PLAYER_HEIGHT/2);
+  beeCtx.moveTo(10, player.height/2 - 5);
+  beeCtx.lineTo(15, player.height/2 + 8);
+  beeCtx.lineTo(5, player.height/2);
   beeCtx.closePath();
   beeCtx.fill();
   
@@ -324,13 +338,13 @@ function updatePlayer() {
   if (keys.left && player.x > 0) {
     player.x -= player.speed;
   }
-  if (keys.right && player.x < beeCanvas.width - PLAYER_WIDTH) {
+  if (keys.right && player.x < beeCanvas.width - player.width) {
     player.x += player.speed;
   }
   if (keys.up && player.y > 0) {
     player.y -= player.speed;
   }
-  if (keys.down && player.y < beeCanvas.height - PLAYER_HEIGHT) {
+  if (keys.down && player.y < beeCanvas.height - player.height) {
     player.y += player.speed;
   }
 }
@@ -403,13 +417,23 @@ function checkCollisions() {
       if (distance < BULLET_WIDTH/2 + 10) {
         bullets.splice(bulletIndex, 1);
         enemies.splice(enemyIndex, 1);
-        score += 100;
-        document.getElementById('beeScore').textContent = score;
+        score += 100 * level;
+        killCount++;
+        
+        if (killCount % 5 === 0) {
+          level++;
+          player.width = Math.min(BASE_PLAYER_WIDTH + level * 8, 120);
+          player.height = Math.min(BASE_PLAYER_HEIGHT + level * 6, 96);
+          lives++;
+          updateLivesDisplay();
+        }
+        
+        updateScoreDisplay();
         
         enemies.push({
           x: Math.random() * (beeCanvas.width - ENEMY_WIDTH),
           y: -ENEMY_HEIGHT,
-          speed: 2 + Math.random() * 2,
+          speed: 2 + Math.random() * 2 + level * 0.3,
           direction: Math.random() > 0.5 ? 1 : -1
         });
       }
@@ -417,12 +441,12 @@ function checkCollisions() {
     
     if (
       player.x < enemy.x + ENEMY_WIDTH &&
-      player.x + PLAYER_WIDTH > enemy.x &&
+      player.x + player.width > enemy.x &&
       player.y < enemy.y + ENEMY_HEIGHT &&
-      player.y + PLAYER_HEIGHT > enemy.y
+      player.y + player.height > enemy.y
     ) {
       lives--;
-      document.getElementById('beeLives').textContent = '❤️ '.repeat(lives);
+      updateLivesDisplay();
       
       enemies.splice(enemyIndex, 1);
       enemies.push({
