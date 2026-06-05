@@ -317,7 +317,7 @@
       </div>
       
       <div class="bee-game">
-        <canvas id="beeCanvas" width="1000" height="800"></canvas>
+        <canvas id="beeCanvas" width="500" height="400"></canvas>
       </div>
       
       <div class="bee-info">
@@ -348,17 +348,17 @@
 const beeCanvas = document.getElementById('beeCanvas');
 const beeCtx = beeCanvas.getContext('2d');
 
-const SCALE = 2;
-const BASE_PLAYER_WIDTH = 50 * SCALE;
-const BASE_PLAYER_HEIGHT = 40 * SCALE;
-const BULLET_WIDTH = 6 * SCALE;
-const BULLET_HEIGHT = 6 * SCALE;
-const ENEMY_WIDTH = 40 * SCALE;
-const ENEMY_HEIGHT = 30 * SCALE;
-const CANVAS_WIDTH = 1000;
-const CANVAS_HEIGHT = 800;
+const SCALE = 1;
+const BASE_PLAYER_WIDTH = 50;
+const BASE_PLAYER_HEIGHT = 40;
+const BULLET_WIDTH = 6;
+const BULLET_HEIGHT = 6;
+const ENEMY_WIDTH = 40;
+const ENEMY_HEIGHT = 30;
+const CANVAS_WIDTH = 500;
+const CANVAS_HEIGHT = 400;
 
-let player = { x: 250 * SCALE, y: 350 * SCALE, speed: 6 * SCALE, width: BASE_PLAYER_WIDTH, height: BASE_PLAYER_HEIGHT };
+let player = { x: 250, y: 350, speed: 6, width: BASE_PLAYER_WIDTH, height: BASE_PLAYER_HEIGHT };
 let bullets = [];
 let enemies = [];
 let score = 0;
@@ -413,7 +413,7 @@ function renderLeaderboard() {
 }
 
 function initBeeGame() {
-  player = { x: 250 * SCALE, y: 350 * SCALE, speed: 6 * SCALE, width: BASE_PLAYER_WIDTH, height: BASE_PLAYER_HEIGHT };
+  player = { x: 250, y: 350, speed: 6, width: BASE_PLAYER_WIDTH, height: BASE_PLAYER_HEIGHT };
   bullets = [];
   enemies = [];
   score = 0;
@@ -435,9 +435,9 @@ function initBeeGame() {
   
   for (let i = 0; i < 5; i++) {
     enemies.push({
-      x: i * 100 * SCALE + 25 * SCALE,
-      y: -ENEMY_HEIGHT - i * 80 * SCALE,
-      speed: (2 + Math.random() * 2) * SCALE,
+      x: i * 100 + 25,
+      y: -ENEMY_HEIGHT - i * 80,
+      speed: 2 + Math.random() * 2,
       direction: 1
     });
   }
@@ -725,7 +725,7 @@ function updateBullets() {
 }
 
 function shootBullet() {
-  const speed = 12 * SCALE;
+  const speed = 12;
   const bulletCount = 5;
   const spreadAngle = Math.PI / 6;
   
@@ -751,8 +751,8 @@ function skillScatter() {
     bullets.push({
       x: player.x + player.width/2,
       y: player.y,
-      vx: Math.cos(angle) * 8 * SCALE,
-      vy: Math.sin(angle) * 8 * SCALE
+      vx: Math.cos(angle) * 8,
+      vy: Math.sin(angle) * 8
     });
   }
 }
@@ -763,16 +763,16 @@ function skillLaser() {
   skills.laser.cooldown = skills.laser.maxCooldown;
   
   const maxLaserWidth = CANVAS_WIDTH;
-  const laserWidth = Math.min(4 * SCALE + (level - 1) * 5 * SCALE, maxLaserWidth);
+  const laserWidth = Math.min(4 + (level - 1) * 5, maxLaserWidth);
   
   bullets.push({
     x: player.x + player.width/2,
     y: player.y,
     vx: 0,
-    vy: -20 * SCALE,
+    vy: -20,
     isLaser: true,
     width: laserWidth,
-    height: 60 * SCALE
+    height: 60
   });
 }
 
@@ -787,7 +787,7 @@ function skillShield() {
 function updateEnemies() {
   enemies.forEach(enemy => {
     enemy.y += enemy.speed;
-    enemy.x += enemy.direction * 2 * SCALE;
+    enemy.x += enemy.direction * 2;
     
     if (enemy.x <= 0 || enemy.x >= CANVAS_WIDTH - ENEMY_WIDTH) {
       enemy.direction *= -1;
@@ -796,7 +796,7 @@ function updateEnemies() {
     if (enemy.y > CANVAS_HEIGHT) {
       enemy.y = -ENEMY_HEIGHT;
       enemy.x = Math.random() * (CANVAS_WIDTH - ENEMY_WIDTH);
-      enemy.speed = (2 + Math.random() * 2) * SCALE;
+      enemy.speed = 2 + Math.random() * 2;
     }
   });
 }
@@ -807,8 +807,13 @@ function checkCollisions() {
       let hit = false;
       
       if (bullet.isLaser) {
-        if (bullet.x > enemy.x && bullet.x < enemy.x + ENEMY_WIDTH &&
-            bullet.y > enemy.y && bullet.y < enemy.y + ENEMY_HEIGHT) {
+        const laserLeft = bullet.x - bullet.width / 2;
+        const laserRight = bullet.x + bullet.width / 2;
+        const laserTop = bullet.y - bullet.height / 2;
+        const laserBottom = bullet.y + bullet.height / 2;
+        
+        if (laserRight > enemy.x && laserLeft < enemy.x + ENEMY_WIDTH &&
+            laserBottom > enemy.y && laserTop < enemy.y + ENEMY_HEIGHT) {
           hit = true;
         }
       } else {
@@ -833,8 +838,8 @@ function checkCollisions() {
         
         if (killCount % 50 === 0) {
           level++;
-          player.width = Math.min(BASE_PLAYER_WIDTH + level * 8 * SCALE, 120 * SCALE);
-          player.height = Math.min(BASE_PLAYER_HEIGHT + level * 6 * SCALE, 96 * SCALE);
+          player.width = Math.min(BASE_PLAYER_WIDTH + level * 8, 120);
+          player.height = Math.min(BASE_PLAYER_HEIGHT + level * 6, 96);
           lives += level;
           updateLivesDisplay();
         }
@@ -844,7 +849,7 @@ function checkCollisions() {
         enemies.push({
           x: Math.random() * (CANVAS_WIDTH - ENEMY_WIDTH),
           y: -ENEMY_HEIGHT,
-          speed: (2 + Math.random() * 2 + level * 0.3) * SCALE,
+          speed: 2 + Math.random() * 2 + level * 0.3,
           direction: Math.random() > 0.5 ? 1 : -1
         });
       }
@@ -863,7 +868,7 @@ function checkCollisions() {
       enemies.push({
         x: Math.random() * (CANVAS_WIDTH - ENEMY_WIDTH),
         y: -ENEMY_HEIGHT,
-        speed: (2 + Math.random() * 2) * SCALE,
+        speed: 2 + Math.random() * 2,
         direction: Math.random() > 0.5 ? 1 : -1
       });
       
@@ -886,11 +891,11 @@ function drawBackground() {
   beeCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   
   beeCtx.fillStyle = '#98d8c8';
-  beeCtx.fillRect(0, CANVAS_HEIGHT - 30 * SCALE, CANVAS_WIDTH, 30 * SCALE);
+  beeCtx.fillRect(0, CANVAS_HEIGHT - 30, CANVAS_WIDTH, 30);
   
   beeCtx.fillStyle = '#7fb8aa';
   for (let i = 0; i < 10; i++) {
-    beeCtx.fillRect(i * 50 * SCALE, CANVAS_HEIGHT - 30 * SCALE, 30 * SCALE, 20 * SCALE);
+    beeCtx.fillRect(i * 50, CANVAS_HEIGHT - 30, 30, 20);
   }
 }
 
